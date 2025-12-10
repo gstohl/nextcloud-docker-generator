@@ -1,0 +1,7 @@
+node_modules/
+.vinxi/
+.output/
+dist/
+.DS_Store
+*.log
+bun.lockb
