@@ -45,46 +45,24 @@ sudo ufw enable
 sudo ufw status
 ```
 
-### 3. Configure Secondary Disk with LVM
+### 3. Disk Configuration (During OS Installation)
 
-Most servers have a small OS disk and a larger data disk. We'll configure the data disk with LVM for flexibility.
+**Important:** Configure your disks during Ubuntu installation, not after!
 
+During Ubuntu 24.04 installation:
+1. Choose **"Custom storage layout"** or **"Manual partitioning"**
+2. **OS Disk** (small SSD):
+   - `/boot` - 1 GB
+   - `/` (root) - remaining space
+3. **Data Disk** (large HDD/SSD):
+   - Use LVM
+   - Mount as `/srv`
+   - Use 100% of disk space
+
+After installation, verify:
 ```bash
-# List available disks
-lsblk
-
-# Identify your secondary disk (e.g., /dev/sdb or /dev/vdb)
-# WARNING: This will erase all data on the disk!
-
-# Install LVM tools
-sudo apt install -y lvm2
-
-# Create physical volume (replace /dev/sdb with your disk)
-sudo pvcreate /dev/sdb
-
-# Create volume group named 'data-vg'
-sudo vgcreate data-vg /dev/sdb
-
-# Create logical volume using 100% of available space
-sudo lvcreate -l 100%FREE -n data-lv data-vg
-
-# Format with ext4
-sudo mkfs.ext4 /dev/data-vg/data-lv
-
-# Create mount point
-sudo mkdir -p /srv
-
-# Get UUID of the new volume
-sudo blkid /dev/data-vg/data-lv
-
-# Add to /etc/fstab for persistent mount (replace UUID with actual value)
-echo "UUID=YOUR-UUID-HERE /srv ext4 defaults 0 2" | sudo tee -a /etc/fstab
-
-# Mount the volume
-sudo mount -a
-
-# Verify mount
 df -h /srv
+# Should show your data disk mounted at /srv
 ```
 
 ### 4. Install Docker

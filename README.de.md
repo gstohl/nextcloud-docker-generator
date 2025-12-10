@@ -45,46 +45,24 @@ sudo ufw enable
 sudo ufw status
 ```
 
-### 3. Sekundäre Festplatte mit LVM konfigurieren
+### 3. Festplatten-Konfiguration (Während der OS-Installation)
 
-Die meisten Server haben eine kleine OS-Festplatte und eine größere Daten-Festplatte. Wir konfigurieren die Daten-Festplatte mit LVM für mehr Flexibilität.
+**Wichtig:** Konfigurieren Sie Ihre Festplatten während der Ubuntu-Installation, nicht danach!
 
+Während der Ubuntu 24.04 Installation:
+1. Wählen Sie **"Benutzerdefiniertes Speicherlayout"** oder **"Manuelle Partitionierung"**
+2. **OS-Festplatte** (kleine SSD):
+   - `/boot` - 1 GB
+   - `/` (root) - restlicher Speicherplatz
+3. **Daten-Festplatte** (große HDD/SSD):
+   - LVM verwenden
+   - Als `/srv` mounten
+   - 100% des Speicherplatzes nutzen
+
+Nach der Installation überprüfen:
 ```bash
-# Verfügbare Festplatten anzeigen
-lsblk
-
-# Identifizieren Sie Ihre sekundäre Festplatte (z.B. /dev/sdb oder /dev/vdb)
-# ACHTUNG: Dies löscht alle Daten auf der Festplatte!
-
-# LVM-Tools installieren
-sudo apt install -y lvm2
-
-# Physical Volume erstellen (ersetzen Sie /dev/sdb mit Ihrer Festplatte)
-sudo pvcreate /dev/sdb
-
-# Volume Group mit Namen 'data-vg' erstellen
-sudo vgcreate data-vg /dev/sdb
-
-# Logical Volume mit 100% des verfügbaren Speicherplatzes erstellen
-sudo lvcreate -l 100%FREE -n data-lv data-vg
-
-# Mit ext4 formatieren
-sudo mkfs.ext4 /dev/data-vg/data-lv
-
-# Mount-Punkt erstellen
-sudo mkdir -p /srv
-
-# UUID des neuen Volumes ermitteln
-sudo blkid /dev/data-vg/data-lv
-
-# Zu /etc/fstab hinzufügen für persistenten Mount (UUID mit echtem Wert ersetzen)
-echo "UUID=IHRE-UUID-HIER /srv ext4 defaults 0 2" | sudo tee -a /etc/fstab
-
-# Volume mounten
-sudo mount -a
-
-# Mount überprüfen
 df -h /srv
+# Sollte Ihre Daten-Festplatte unter /srv anzeigen
 ```
 
 ### 4. Docker installieren
