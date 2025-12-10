@@ -29,6 +29,8 @@ jobs:
 
       - name: Build
         run: bun run build
+        env:
+          GITHUB_PAGES: "true"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
