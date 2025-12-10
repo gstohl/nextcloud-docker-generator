@@ -18,7 +18,17 @@ Interactive shell script to deploy multi-tenant Nextcloud with Caddy for automat
 
 ## Complete Setup Guide (Ubuntu 24.04 LTS)
 
-This guide walks you through setting up a fresh Ubuntu 24.04 LTS server for Nextcloud hosting.
+> **⚠️ IMPORTANT: Disk Configuration During Installation**
+>
+> Configure your disks **during Ubuntu installation** - this cannot be easily changed later!
+>
+> Use **"Custom storage layout"** in the installer:
+> - **OS Disk** (small SSD): `/boot` (1 GB) + `/` (rest)
+> - **Data Disk** (large HDD/SSD): LVM → mount as `/srv` (100%)
+>
+> After install, verify with: `df -h /srv`
+
+---
 
 ### 1. Initial Server Setup
 
@@ -45,27 +55,7 @@ sudo ufw enable
 sudo ufw status
 ```
 
-### 3. Disk Configuration (During OS Installation)
-
-**Important:** Configure your disks during Ubuntu installation, not after!
-
-During Ubuntu 24.04 installation:
-1. Choose **"Custom storage layout"** or **"Manual partitioning"**
-2. **OS Disk** (small SSD):
-   - `/boot` - 1 GB
-   - `/` (root) - remaining space
-3. **Data Disk** (large HDD/SSD):
-   - Use LVM
-   - Mount as `/srv`
-   - Use 100% of disk space
-
-After installation, verify:
-```bash
-df -h /srv
-# Should show your data disk mounted at /srv
-```
-
-### 4. Install Docker
+### 3. Install Docker
 
 ```bash
 # Install Docker using official script
@@ -85,7 +75,7 @@ docker --version
 docker ps
 ```
 
-### 5. Move Docker Data to /srv
+### 4. Move Docker Data to /srv
 
 By default, Docker stores data in `/var/lib/docker`. We'll move it to `/srv` for more space.
 
@@ -117,7 +107,7 @@ sudo systemctl start docker
 docker info | grep "Docker Root Dir"
 ```
 
-### 6. Configure DNS
+### 5. Configure DNS
 
 Before running the script, ensure your domain(s) point to your server:
 
@@ -134,7 +124,7 @@ curl -s ifconfig.me
 # Both should show the same IP
 ```
 
-### 7. Deploy Nextcloud
+### 6. Deploy Nextcloud
 
 ```bash
 # Navigate to data disk
@@ -153,7 +143,7 @@ The script will prompt you for:
 - **Domain per instance**: e.g., `cloud.example.com`
 - **Admin username per instance**: Default is `admin`
 
-### 8. Post-Installation
+### 7. Post-Installation
 
 After deployment:
 

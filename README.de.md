@@ -18,7 +18,17 @@ Interaktives Shell-Skript zur Bereitstellung von Multi-Tenant Nextcloud mit Cadd
 
 ## Vollständige Einrichtungsanleitung (Ubuntu 24.04 LTS)
 
-Diese Anleitung führt Sie durch die Einrichtung eines frischen Ubuntu 24.04 LTS Servers für Nextcloud-Hosting.
+> **⚠️ WICHTIG: Festplatten-Konfiguration bei der Installation**
+>
+> Konfigurieren Sie Ihre Festplatten **während der Ubuntu-Installation** - das kann später nicht einfach geändert werden!
+>
+> Verwenden Sie **"Benutzerdefiniertes Speicherlayout"** im Installer:
+> - **OS-Festplatte** (kleine SSD): `/boot` (1 GB) + `/` (Rest)
+> - **Daten-Festplatte** (große HDD/SSD): LVM → mounten als `/srv` (100%)
+>
+> Nach der Installation prüfen mit: `df -h /srv`
+
+---
 
 ### 1. Grundlegende Server-Einrichtung
 
@@ -45,27 +55,7 @@ sudo ufw enable
 sudo ufw status
 ```
 
-### 3. Festplatten-Konfiguration (Während der OS-Installation)
-
-**Wichtig:** Konfigurieren Sie Ihre Festplatten während der Ubuntu-Installation, nicht danach!
-
-Während der Ubuntu 24.04 Installation:
-1. Wählen Sie **"Benutzerdefiniertes Speicherlayout"** oder **"Manuelle Partitionierung"**
-2. **OS-Festplatte** (kleine SSD):
-   - `/boot` - 1 GB
-   - `/` (root) - restlicher Speicherplatz
-3. **Daten-Festplatte** (große HDD/SSD):
-   - LVM verwenden
-   - Als `/srv` mounten
-   - 100% des Speicherplatzes nutzen
-
-Nach der Installation überprüfen:
-```bash
-df -h /srv
-# Sollte Ihre Daten-Festplatte unter /srv anzeigen
-```
-
-### 4. Docker installieren
+### 3. Docker installieren
 
 ```bash
 # Docker mit offiziellem Skript installieren
@@ -85,7 +75,7 @@ docker --version
 docker ps
 ```
 
-### 5. Docker-Daten nach /srv verschieben
+### 4. Docker-Daten nach /srv verschieben
 
 Standardmäßig speichert Docker Daten in `/var/lib/docker`. Wir verschieben sie nach `/srv` für mehr Speicherplatz.
 
@@ -117,7 +107,7 @@ sudo systemctl start docker
 docker info | grep "Docker Root Dir"
 ```
 
-### 6. DNS konfigurieren
+### 5. DNS konfigurieren
 
 Bevor Sie das Skript ausführen, stellen Sie sicher, dass Ihre Domain(s) auf Ihren Server zeigen:
 
@@ -134,7 +124,7 @@ curl -s ifconfig.me
 # Beide sollten dieselbe IP anzeigen
 ```
 
-### 7. Nextcloud bereitstellen
+### 6. Nextcloud bereitstellen
 
 ```bash
 # Zum Daten-Laufwerk navigieren
@@ -153,7 +143,7 @@ Das Skript fragt Sie nach:
 - **Domain pro Instanz**: z.B. `cloud.beispiel.de`
 - **Admin-Benutzername pro Instanz**: Standard ist `admin`
 
-### 8. Nach der Installation
+### 7. Nach der Installation
 
 Nach der Bereitstellung:
 
