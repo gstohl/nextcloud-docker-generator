@@ -130,9 +130,12 @@ curl -s ifconfig.me
 # Zum Daten-Laufwerk navigieren
 cd /srv
 
-# Deployment-Skript herunterladen und ausführen
+# Skripte herunterladen
 curl -fsSL https://raw.githubusercontent.com/gstohl/nextcloud-docker-generator/main/deploy-nextcloud.sh -o deploy-nextcloud.sh
-chmod +x deploy-nextcloud.sh
+curl -fsSL https://raw.githubusercontent.com/gstohl/nextcloud-docker-generator/main/cleanup-nextcloud.sh -o cleanup-nextcloud.sh
+chmod +x deploy-nextcloud.sh cleanup-nextcloud.sh
+
+# Deployment ausführen
 ./deploy-nextcloud.sh
 ```
 
@@ -201,6 +204,25 @@ docker system df
 # Ungenutzte Images und Container entfernen
 docker system prune -a
 ```
+
+## Bereinigung / Deinstallation
+
+Um eine Nextcloud-Installation vollständig zu entfernen (Container, Volumes und alle Daten):
+
+```bash
+cd /srv
+./cleanup-nextcloud.sh
+```
+
+Das Skript wird:
+- Nach dem Projektverzeichnis-Namen fragen
+- Bestätigung durch Eingabe von `DELETE` erfordern
+- Alle Container stoppen und entfernen
+- Alle Docker-Volumes entfernen (Datenbank, Dateien, Redis)
+- Docker-Netzwerke entfernen
+- Optional das gesamte Projektverzeichnis oder nur generierte Dateien entfernen
+
+> **Warnung**: Dies löscht dauerhaft alle Daten einschließlich hochgeladener Dateien und Datenbanken!
 
 ## Backup
 
