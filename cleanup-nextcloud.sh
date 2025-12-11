@@ -26,21 +26,32 @@ echo -e "${CYAN}     NEXTCLOUD CLEANUP SCRIPT${NC}"
 echo -e "${CYAN}============================================================================${NC}"
 echo ""
 
-# Check if we're in the right directory
-if [ ! -f "docker-compose.yml" ]; then
-    print_error "docker-compose.yml not found!"
-    echo "Please run this script from your Nextcloud project directory"
-    echo "(the directory containing docker-compose.yml)"
+# Ask for project directory
+read -p "Project directory name [nextcloud-caddy]: " PROJECT_DIR
+PROJECT_DIR=${PROJECT_DIR:-nextcloud-caddy}
+
+# Check if project directory exists
+if [ ! -d "$PROJECT_DIR" ]; then
+    print_error "Directory '$PROJECT_DIR' not found!"
+    echo "Available directories:"
+    ls -d */ 2>/dev/null || echo "  (none)"
+    exit 1
+fi
+
+# Check if it contains docker-compose.yml
+if [ ! -f "$PROJECT_DIR/docker-compose.yml" ]; then
+    print_error "docker-compose.yml not found in '$PROJECT_DIR'!"
+    echo "This doesn't appear to be a Nextcloud deployment directory."
     exit 1
 fi
 
 # Detect number of instances from docker-compose.yml
-NUM_INSTANCES=$(grep -c "nextcloud[0-9]*-app" docker-compose.yml 2>/dev/null || echo "0")
+NUM_INSTANCES=$(grep -c "nextcloud[0-9]*-app" "$PROJECT_DIR/docker-compose.yml" 2>/dev/null || echo "0")
 if [ "$NUM_INSTANCES" -eq 0 ]; then
     # Fallback: count by looking for db services
-    NUM_INSTANCES=$(grep -c "POSTGRES_DB: nextcloud" docker-compose.yml 2>/dev/null || echo "1")
+    NUM_INSTANCES=$(grep -c "POSTGRES_DB: nextcloud" "$PROJECT_DIR/docker-compose.yml" 2>/dev/null || echo "1")
 fi
-print_info "Detected $NUM_INSTANCES Nextcloud instance(s)"
+print_info "Detected $NUM_INSTANCES Nextcloud instance(s) in '$PROJECT_DIR'"
 
 # Confirmation
 echo ""
@@ -65,14 +76,15 @@ echo ""
 
 # Stop and remove containers
 print_info "Stopping and removing containers..."
+cd "$PROJECT_DIR"
 docker compose down --remove-orphans 2>/dev/null || true
 
 # Remove volumes
 print_info "Removing Docker volumes..."
-for i in $(seq 1 $NUM_INSTANCES); do
-    # Get project name (directory name) for volume prefix
-    PROJECT_NAME=$(basename "$(pwd)" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]//g')
+# Get project name (directory name) for volume prefix - docker compose uses this
+PROJECT_NAME=$(basename "$(pwd)" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]//g')
 
+for i in $(seq 1 $NUM_INSTANCES); do
     # Try with project prefix first, then without
     for vol in "nc${i}_html" "db${i}_data" "redis${i}_data"; do
         docker volume rm "${PROJECT_NAME}_${vol}" 2>/dev/null && print_success "Removed volume ${PROJECT_NAME}_${vol}" || true
@@ -90,37 +102,53 @@ for i in $(seq 1 $NUM_INSTANCES); do
     docker network rm "backend${i}" 2>/dev/null && print_success "Removed network backend${i}" || true
 done
 
+# Go back to parent directory
+cd ..
+
 # Remove generated files
-print_info "Removing generated files..."
+print_info "Removing generated files in '$PROJECT_DIR'..."
 
-# Remove nginx configs
-if [ -d "nginx" ]; then
-    rm -rf nginx
-    print_success "Removed nginx/"
-fi
+# Ask if user wants to remove the entire directory or just contents
+echo ""
+echo "How do you want to clean up?"
+echo "  1) Remove entire '$PROJECT_DIR' directory"
+echo "  2) Remove only generated files (keep directory)"
+read -p "Choice [1]: " cleanup_choice
+cleanup_choice=${cleanup_choice:-1}
 
-# Remove caddy configs
-if [ -d "caddy" ]; then
-    rm -rf caddy
-    print_success "Removed caddy/"
-fi
-
-# Remove backups directory (ask first)
-if [ -d "backups" ]; then
-    read -p "Remove backups directory? [y/N]: " remove_backups
-    if [[ "$remove_backups" =~ ^[Yy] ]]; then
-        rm -rf backups
-        print_success "Removed backups/"
-    else
-        print_info "Kept backups/"
+if [ "$cleanup_choice" = "1" ]; then
+    rm -rf "$PROJECT_DIR"
+    print_success "Removed entire '$PROJECT_DIR' directory"
+else
+    # Remove nginx configs
+    if [ -d "$PROJECT_DIR/nginx" ]; then
+        rm -rf "$PROJECT_DIR/nginx"
+        print_success "Removed nginx/"
     fi
-fi
 
-# Remove config files
-[ -f "docker-compose.yml" ] && rm -f docker-compose.yml && print_success "Removed docker-compose.yml"
-[ -f ".env" ] && rm -f .env && print_success "Removed .env"
-[ -f "credentials.txt" ] && rm -f credentials.txt && print_success "Removed credentials.txt"
-[ -f "manage.sh" ] && rm -f manage.sh && print_success "Removed manage.sh"
+    # Remove caddy configs
+    if [ -d "$PROJECT_DIR/caddy" ]; then
+        rm -rf "$PROJECT_DIR/caddy"
+        print_success "Removed caddy/"
+    fi
+
+    # Remove backups directory (ask first)
+    if [ -d "$PROJECT_DIR/backups" ]; then
+        read -p "Remove backups directory? [y/N]: " remove_backups
+        if [[ "$remove_backups" =~ ^[Yy] ]]; then
+            rm -rf "$PROJECT_DIR/backups"
+            print_success "Removed backups/"
+        else
+            print_info "Kept backups/"
+        fi
+    fi
+
+    # Remove config files
+    [ -f "$PROJECT_DIR/docker-compose.yml" ] && rm -f "$PROJECT_DIR/docker-compose.yml" && print_success "Removed docker-compose.yml"
+    [ -f "$PROJECT_DIR/.env" ] && rm -f "$PROJECT_DIR/.env" && print_success "Removed .env"
+    [ -f "$PROJECT_DIR/credentials.txt" ] && rm -f "$PROJECT_DIR/credentials.txt" && print_success "Removed credentials.txt"
+    [ -f "$PROJECT_DIR/manage.sh" ] && rm -f "$PROJECT_DIR/manage.sh" && print_success "Removed manage.sh"
+fi
 
 # Final cleanup - prune unused volumes (optional)
 echo ""
